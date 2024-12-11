@@ -2,6 +2,8 @@ module alu(
     input wire clk,
     input wire rst,
     input wire rdy,
+
+    
     input wire valid,
     input wire [4:0] work_type,// the thrid bit is used to indicate whether the signed
     input wire [31:0] r1,
