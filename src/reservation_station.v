@@ -1,5 +1,5 @@
-`include"/home/oguricap/CPU2024-main/src/const.v"
-/* `include"const.v" */
+/* `include"/home/oguricap/CPU2024-main/src/const.v" */
+`include"const.v"
 module reservation_station (
     input wire clk,
     input wire rst,
