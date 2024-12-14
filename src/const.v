@@ -8,14 +8,12 @@
 `define robtype_b 2'b10
 `define robtype_exit 2'b11
 
-`define reg_size 5
-`define lsb_type_size 1
+`define reg_size_bit 5
+`define reg_size 32
+`define lsb_type_size 4
 `define rs_type_size 4
 
 
 
 `define lsb_size_bit 5
-`define lsb_size = 1 << `lsb_size_bit
-
-
 `define cache_size_bit 5

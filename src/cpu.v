@@ -371,15 +371,36 @@ data_cache cache(
   .data_wr(lsbcache_cache_way),
   .data_type(lsbcache_cache_size),
   .data_addr(lsbcache_cache_addr),
-  .data_value(lsbcache_),
-  .data_ready(lsb_ready_out),
-  .data_res(lsb_value_out),
+  .data_value(lsbcache_cache_value),
+  .data_ready(lsbcache_cache_ready),
+  .data_res(lsbcache_cache_result),
 
   .mem_din(mem_din),
   .mem_dout(mem_dout),
   .mem_a(mem_a),
   .mem_wr(mem_wr),
   .io_buffer_full(io_buffer_full)
+);
+
+register_file register(
+  .clk(clk_in),
+  .rst(rst_in),
+  .rdy(rdy_in),
+
+  .rs1_reg_value(dreg_rs1_reg_value),
+  .rs2_reg_value(dreg_rs2_reg_value),
+  .has_dep1(dreg_has_dep1),
+  .has_dep2(dreg_has_dep2),
+  .input_dep1(dreg_input_dep1),
+  .input_dep2(dreg_input_dep2),
+
+  .need_set_reg_value(robreg_need_set_reg_value),
+  .need_set_reg_dep(robreg_need_set_reg_dep),
+  .set_reg_id(robreg_set_reg_id),
+  .set_reg_val(robreg_set_reg_val),
+  .set_reg_rob_id(robreg_set_reg_rob_id),
+  .set_dep_reg(robreg_set_dep_reg),
+  .set_dep_rob_id(robreg_set_dep_rob_id)
 );
 
 
