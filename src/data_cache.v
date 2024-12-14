@@ -1,7 +1,3 @@
-`include "const.v"
-`include "instruction_cache.v"
-`include "memory_controller.v"
-
 module data_cache(
     input wire clk,
     input wire rst,
@@ -15,13 +11,14 @@ module data_cache(
     output wire inst_ready,
     output wire [31:0] inst_res,
 
+    //to lsb
     input wire data_valid,
     input wire data_wr,
     input wire [2:0]data_type,
     input wire [31:0] data_addr,
     input wire [31:0] data_value,
     output wire data_ready,
-    output wire [31:0] data_res
+    output wire [31:0] data_res,
     
 
     //to memory
@@ -44,7 +41,7 @@ module data_cache(
     wire memory_wr;
 
     wire inst_hit;
-    wire [31:0] inst_res;
+    wire [31:0] cache_res;
     wire inst_write_ready;
 
     instruction_cache inst_cache(
@@ -56,7 +53,7 @@ module data_cache(
         .addr(inst_addr),
         .data(memory_res),
         .ready(inst_ready),
-        .final_result(inst_res),
+        .final_result(cache_res),
         .hit(inst_hit)
     );
     assign mc_rst = rst | clear;
@@ -87,7 +84,6 @@ module data_cache(
             memory_addr <= 0;
             memory_type <= 0;
             memory_data <= 0;
-            memory_ready <= 0;
             
         end
         else if (!rdy) begin
@@ -101,15 +97,13 @@ module data_cache(
                 memory_addr <= data_addr;
                 memory_type <= data_type;
                 memory_data <= data_value;
-                memory_wr <= data_wr;
             end
             else if (inst_valid && !inst_hit) begin
                 work <= 1;
                 work_wr <= 0;
                 memory_use <= 1;
                 memory_addr <= inst_addr;
-                memory_wr <= 0;
-                memory_type <= 3`b010 ; // 4 bytes
+                memory_type <= 3'b010 ; // 4 bytes
                 memory_data <= 0;
             end
         end
@@ -123,7 +117,7 @@ module data_cache(
     assign data_ready = memory_ready && work && (work_wr == 1);
     assign inst_ready = inst_hit;
     assign data_res = memory_res;
-    assign inst_res = inst_res;
+    assign inst_res = cache_res;
     assign inst_write_ready = work && (memory_ready && work_wr == 0);
 
 

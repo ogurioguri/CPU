@@ -1,7 +1,5 @@
-'include "reorder_buffer.v"
-'include "const.v"
-
-module decoder(){
+`include "const.v"
+module decoder(
 
     
     input wire clk,
@@ -12,64 +10,67 @@ module decoder(){
     input wire [31:0] PC,
     input wire [31:0] inst_in,
     input wire instcache_ready_out,
-    output wire [31:0] next_PC,
 
     // to reorder buffer
-    output wire to_rob_ready,
+    output reg to_rob_ready,
     /* output reg [4:0] rob_rs1;
     output reg [4:0] rob_rs2; */
-    output reg [4:0] rob_rd,
+    output reg [4:0] rob_id,
     /* output wire rob_rs1_valid;
     output wire rob_rs2_valid;  */
-    output wire [1:0] rob_type,
-    output wire [31:0] rob_imm,
-    output wire [31 : 0] rob_address,
-    output wire rob_jump,
-    output wire rob_pc,
-
-    input wire next_position,
+    output reg [`rob_type_bit -1 :0] rob_type,
+    output reg [31:0] rob_imm,
+    output reg [31 : 0] rob_address,
+    output reg [31 : 0]rob_jump_address,
+    input wire rob_full,
+    input wire [`robsize : 0] next_position,
 
 
     //to lsb
     input wire lsb_full,
-    output wire to_lsb_ready,
+
+    
+    output reg to_lsb_ready,
     output wire [31 : 0] lsb_r1,
     output wire [31 : 0] lsb_r2,
-    output wire [11 : 0] lsb_offset,
-    output wire [`reg_size : 0] lsb_rd,
-    output wire [`robsize : 0] lsb_dep1,
-    output wire [`robsize : 0] lsb_dep2,
+    output reg [11 : 0] lsb_offset,
+    output wire [`reg_size -1 : 0] lsb_rd,
+    output wire [`robsize -1 : 0] lsb_dep1,
+    output wire [`robsize -1 : 0] lsb_dep2,
     output wire lsb_has_dep1,
     output wire lsb_has_dep2,
-    output wire [`rob_size : 0] lsb_rob_id,
-    output wire [`lsb_type_size : 0] lsb_type,
+    output wire [`robsize -1 : 0] lsb_rob_id,
+    output reg [`lsb_type_size -1 : 0] lsb_type,
 
     //to reservation station
     input wire rs_full,
-    output wire to_rs_ready,
-    output [4 : 0] rs_rd,
-    output [31 : 0] rs_r1,
-    output [31 : 0] rs_r2,
-    output [`reg_size: 0] rs_dep1,
-    output [`reg_size : 0] rs_dep2,
-    output rs_has_dep1,
-    output rs_has_dep2,
-    output [`robsize : 0] rs_rob_id,
-    output [`rs_type_size : 0] rs_type,   
+    output reg to_rs_ready,
+    output wire [4 : 0] rs_rd,
+    output wire [31 : 0] rs_r1,
+    output wire [31 : 0] rs_r2,
+    output wire [`reg_size -1: 0] rs_dep1,
+    output wire [`reg_size -1 : 0] rs_dep2,
+    output wire rs_has_dep1,
+    output wire rs_has_dep2,
+    output wire [`robsize -1 : 0] rs_rob_id,
+    output reg [`rs_type_size -1 : 0] rs_type,   
 
     // to register 
     input wire [31 : 0] rs1_reg_value,
     input wire [31 : 0] rs2_reg_value,
     input wire has_dep1,
     input wire has_dep2,
-    input wire [`robsize : 0] input_dep1,
-    input wire [`robsize : 0] input_dep2,
+    input wire [`robsize -1 : 0] input_dep1,
+    input wire [`robsize -1 : 0] input_dep2,
 
 
     // clear the inst
-    output wire clear_inst
+    output reg clear_inst,
+    output reg [31:0] if_addr
 
-};
+
+
+);
 
 localparam [6:0] opcode_j = 7'b1101111;
 localparam [6:0] opcode_r = 7'b0110011;
@@ -97,43 +98,57 @@ wire [7:0] function7 = inst_in[31:25];
 reg [31:0] rs1_value; // ask the register file to get this
 reg [31:0] rs2_value;
 
-reg [31:0] last_instrution_address;
+reg [31:0] last_inst_addr;
+wire need_rs;
+wire need_lsb;
+wire need_rs1;
+wire need_rs2;
 
 
-assign wire need_rs = (opcode == opcode_b) || (opcode == opcode_r) || (opcode == opcode_i);
-assign wire need_lsb = (opcode == opcode_l) || (opcode == opcode_s);
+assign need_rs = (opcode == opcode_b) || (opcode == opcode_r) || (opcode == opcode_i);
+assign need_lsb = (opcode == opcode_l) || (opcode == opcode_s);
 
-
-wire need_rs1 = opcode == opcode_jalr || opcode == opcode_r || opcode == opcode_i || opcode == opcode_s || opcode == opcode_b || opcode == opcode_l;
-wire need_rs2 = opcode == opcode_r || opcode == opcode_s || opcode == opcode_b;
+assign need_rs1 = opcode == opcode_jalr || opcode == opcode_r || opcode == opcode_i || opcode == opcode_s || opcode == opcode_b || opcode == opcode_l;
+assign need_rs2 = opcode == opcode_r || opcode == opcode_s || opcode == opcode_b;
 reg is_dep1;
 reg is_dep2;
-reg [reg_size:0] dep1;
-reg [reg_size:0] dep2;
+reg [`reg_size:0] dep1;
+reg [`reg_size:0] dep2;
 
-assign wire need_begin = last_inst_addr != PC && !rob_full && (!rs_full || !need_rs) && (!lsb_full || !need_lsb)  && instcache_ready_out;
-wire [31:0] next_rs2_val = opcode == CodeArithI ? ((func == 3'b001 || func == 3'b101) ? shamt : {{20{immI[11]}}, immI}) : rs2_val_in;
+wire need_begin = last_inst_addr != PC && !rob_full && (!rs_full || !need_rs) && (!lsb_full || !need_lsb)  && instcache_ready_out;
+wire [31:0] next_rs2_val = opcode == opcode_i ? ((function3 == 3'b001 || function3 == 3'b101) ? shamt : {{20{immI[11]}}, immI}) : rs2_reg_value;
+wire preject = 1'b1;
 
 always @(posedge clk or posedge rst) begin
     if(rst) begin
-        next_PC <= 0;
         rs1_value <= 0;
         rs2_value <= 0;
-        last_instrution_address <= 32'hffffffff;
+        last_inst_addr <= 32'hffffffff;
+
         to_rob_ready <= 0;
-        rob_valid <= 0;
-        lsb_valid <= 0;
-        rs_valid <= 0;
+        rob_id <= 0;
+        rob_type <= 0;
+        rob_imm <= 0;
+        rob_address <= 0;
+        rob_jump_address<= 0;
+
+        to_lsb_ready <= 0;
+        lsb_type <= 0;
+        lsb_offset <= 0; 
+
+        to_rs_ready <= 0;
+        rs_type <= 0;
+
         clear_inst <= 0;
+        if_addr <= 0;  
+
     end
-    else if(!rst){
-        // 
-    }
+    else if(!rst)begin
+    end
     else if (!(need_begin))begin
         to_rob_ready <= 0;
         to_lsb_ready <= 0;
         to_rs_ready <= 0;
-        need_inst <= 0;
         clear_inst <= 0;
     end
     else if(need_begin) begin
@@ -142,13 +157,10 @@ always @(posedge clk or posedge rst) begin
         to_rs_ready <= need_rs;
 
         last_inst_addr <= PC;
-        need_inst <= 1;
 
-        rob_type <= inst == 32'hff9ff06f ? `robtype_exit : (opcode == opcode_b ? `robtype_b : (opcode == opcode_s ? `robtype_s : `robtype_r));
-        lsb_type <= {func,!(opcode == opcode_l)};
-        rs_type <= {func,(opcode == opcode_b)};
-
-        rob_rd <= rd;
+        rob_type <= inst_in == 32'hff9ff06f ? `robtype_exit : (opcode == opcode_b ? `robtype_b : (opcode == opcode_s ? `robtype_s : `robtype_r));
+        lsb_type <= {function3,!(opcode == opcode_l)};
+        rs_type <= {function3,(opcode == opcode_b)};
 
         rs1_value <= rs1_reg_value;
         rs2_value <= next_rs2_val;
@@ -158,27 +170,29 @@ always @(posedge clk or posedge rst) begin
         dep2 <= input_dep2;
 
         lsb_offset <= (opcode == opcode_l) ? immI : immS;
-        rob_address <= inst_addr;
-        rob_jump <= opcode == opcode_lui || opcode == opcode_auipc || opcode == opcode_jalr || opcode == opcode_j;
+        rob_address <= PC;
+        rob_jump_address <= PC + 4;
+    
 
         case(opcode)
             opcode_auipc:begin
-                 rob_imm <= inst_addr + {immU, 12'b0};
+                rob_imm <= PC + {immU, 12'b0};
             end
             opcode_jalr:begin
-                rob_imm <= inst_addr + 4;
+                rob_imm <= PC + 4;
                 clear_inst <= 1;
-                
             end
             opcode_b:begin
                 clear_inst <= 1;
+                if_addr <= PC + {{19{immB[11]}}, immB, 1'b0};
             end
             opcode_j:begin
-                rob_imm <= inst_addr + 4;
+                rob_imm <= PC + 4;
                 clear_inst <= 1;
+                if_addr <= PC + (rs1_reg_value + {{20{immI[10]}}, immI}) & ~32'b1; 
             end
             opcode_lui:begin
-                rob_imm <= immU;
+                rob_imm <=  {immU, 12'b0};
             end
             opcode_s:begin
             end 
@@ -190,7 +204,9 @@ always @(posedge clk or posedge rst) begin
     end
 
 end
+assign need_inst = !need_begin;
 assign rob_rd = rd;
+
 
 assign rs_r1 = rs1_value;
 assign rs_r2 = rs2_value;

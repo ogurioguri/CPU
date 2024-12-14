@@ -1,6 +1,5 @@
-`define rob_bit 2 // the size of rob queue
-`include "const.v"
-
+/* `include"/home/oguricap/CPU2024-main/src/const.v" */
+`include"const.v"
 module reorder_buffer(
     input wire clk,
     input wire rst,
@@ -8,7 +7,7 @@ module reorder_buffer(
    
    // from decoder
     input wire decoder_ready,
-    input wire [`rob_bit : 0] inst_type,
+    input wire [`rob_type_bit - 1: 0] inst_type,
     input wire [4:0] inst_rd,
     input wire [31:0] inst_imm,
     input wire [31:0] inst_pc,
@@ -17,23 +16,19 @@ module reorder_buffer(
 
     output wire full,
     output wire empty,
-    output wire [`robsize : 0] outrob_id_head,
-    output wire [`robsize : 0] outrob_id_tail,
+    output wire [`robsize -1 : 0] outrob_id_head,
+    output wire [`robsize -1 : 0] outrob_id_tail,
 
     output reg clear,
     output reg [31:0] next_pc,
 
-
-
-
-
     // to LoadStoreBuffer
     input wire lsb_ready,
-    input wire [`robsize : 0] lsb_rob_id,
+    input wire [`robsize -1 : 0] lsb_rob_id,
     input wire [31:0] lsb_value,
 
     //to rs
-    input wire [`robsize : 0] rs_rob_id,
+    input wire [`robsize -1 : 0] rs_rob_id,
     input wire [31:0] rs_value,
     input wire rs_ready,
 
@@ -42,9 +37,9 @@ module reorder_buffer(
     output wire need_set_reg_dep,
     output wire [4:0] set_reg_id,
     output wire [31:0] set_reg_val,
-    output wire [`rob_bit : 0] set_reg_rob_id,
+    output wire [`robsize -1 : 0] set_reg_rob_id,
     output wire [4:0] set_dep_reg,
-    output wire [`rob_bit : 0] set_dep_rob_id,
+    output wire [`robsize -1: 0] set_dep_rob_id,
 
     input wire [4:0] need_rob_id1,
     input wire [4:0] need_rob_id2,
@@ -55,18 +50,18 @@ module reorder_buffer(
 
 );
 
-    localparam rob_size_number = 1 << `rob_bit;
+    localparam rob_size_number = 1 << `robsize;
 
-    reg busy [0: `robsize ];
-    reg ready_issue [0: `robsize];
-    reg [`rob_type_bit : 0] rob_type [0: `robsize ];
-    reg [4:0] rob_rd [0: `robsize];
-    reg [31:0] rob_value [0: `robsize];
-    reg [31:0] rob_pc [0: `robsize];
-    reg [31:0] rob_jump_addr [0: `robsize];
+    reg busy [0: rob_size_number -1];
+    reg ready_issue [0: rob_size_number -1 ];
+    reg [`rob_type_bit -1 : 0] rob_type [0: rob_size_number -1 ];
+    reg [4:0] rob_rd [0: rob_size_number -1 ];
+    reg [31:0] rob_value [0: rob_size_number -1];
+    reg [31:0] rob_pc [0: rob_size_number -1 ];
+    reg [31:0] rob_jump_addr [0: rob_size_number -1];
 
-    reg [`robsize : 0] rob_id_head;
-    reg [`robsize : 0] rob_id_tail;
+    reg [`robsize -1 : 0] rob_id_head;
+    reg [`robsize -1 : 0] rob_id_tail;
 
 
     integer i;
@@ -104,11 +99,10 @@ module reorder_buffer(
                 rob_pc[rob_id_tail] <= inst_pc;
                 rob_jump_addr[rob_id_tail] <= inst_jump_addr;
             end
-            if(buzy[rob_id_head] && ready_issue[rob_id_head]) begin
-            
-                buzy[rob_id_head] <= 0;
+            if(busy[rob_id_head] && ready_issue[rob_id_head]) begin
+                busy[rob_id_head] <= 0;
                 ready_issue[rob_id_head] <= 0;
-                if(rob_type[rob_id_head] == `robtype_b) begin
+                if(!rob_value[rob_id_head][0] && rob_type[rob_id_head] == `robtype_b) begin
                     clear <= 1;
                     next_pc <= rob_jump_addr[rob_id_head];
                 end
@@ -124,7 +118,7 @@ module reorder_buffer(
     assign full = (rob_id_tail + 1) % rob_size_number == rob_id_head && busy[rob_id_head];
     assign empty = rob_id_head == rob_id_tail && !busy[rob_id_head];
 
-    wire need_set_reg = (rdy && busy[rob_id_head] && ready_issue[rob_id_head] && work_type[rob_id_head] == `robtype_r);
+    wire need_set_reg = (rdy && busy[rob_id_head] && ready_issue[rob_id_head] && rob_type[rob_id_head] == `robtype_r);
 
     assign need_set_reg_value = need_set_reg;
     assign set_reg_id = rob_rd[rob_id_head];

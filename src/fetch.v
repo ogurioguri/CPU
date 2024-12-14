@@ -1,4 +1,4 @@
-module fetch(){
+module fetch(
     input wire clk,
     input wire rst,
     input wire rdy,
@@ -11,29 +11,26 @@ module fetch(){
     input wire need_inst,
     input wire [31:0] new_pc_decoder,
     input wire clear_decoder,
-    output wire inst_ready_out,
-    output wire [31:0] inst_addr,
-    output wire [31:0] inst,
+    output reg inst_ready_out,
+    output reg [31:0] inst_addr,
+    output reg [31:0] inst,
     
     //to cache
     output wire fetch_ready_in,
-    input reg [31:0] inst_in,
+    input wire [31:0] inst_in,
     input wire instcache_ready_out,
     //for cache to find the instruction
-    output reg [31:0] output_next_PC,
-};
+    output reg [31:0] output_next_PC
+);
 
 
     
     reg ready_work;
     wire [31:0] next_PC;
-
-
     assign fetch_ready_in = ready_work;
-    next_PC = clear ? new_pc : clear_decoder ? new_pc_decoder : next_PC + 4;
+    assign next_PC = clear ? new_pc : clear_decoder ? new_pc_decoder : next_PC + 4;
     always @(posedge clk) begin
         if (rst) begin
-            next_PC <= 0;
             inst_ready_out <= 0;
             inst_addr <= 0;
             inst <= 0;
@@ -42,7 +39,6 @@ module fetch(){
         else if (!rdy) begin
         end
         else if (clear || (!ready_work && clear_decoder)) begin
-            next_PC <= next_PC;
             inst_ready_out <= 0;
             inst_addr <= 0;
             inst <= 0;

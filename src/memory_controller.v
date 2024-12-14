@@ -1,4 +1,5 @@
 `include "const.v"
+/* `include"/home/oguricap/CPU2024-main/src/const.v" */
 module memory_controller(
     input wire clk,
     input wire rst,
@@ -9,7 +10,7 @@ module memory_controller(
     input wire [31:0] addr,
     input wire [2:0] type, // 00: byte, 01: halfword, 10: word
     input wire [31:0] data,
-    output wire ready,
+    output reg ready,
     output wire [31:0] final_result,
 
 
@@ -33,6 +34,19 @@ module memory_controller(
     wire ready_write = !is_io || (is_io && (!wr || !io_buffer_full));
     wire need_work = valid && ready_write && !ready;
 
+    function [31:0] return;
+        input [2:0] type;
+        input [31:0] result;
+        input [7:0] mem_din;
+        case (type)
+            3'b000:  return = {24'b0, mem_din};
+            3'b001:  return = {16'b0, mem_din[7:0], result[7:0]};
+            3'b010:  return = {mem_din[7:0], result[23:0]};
+            3'b100:  return = {{24{mem_din[7]}}, mem_din};
+            3'b101:  return = {{16{mem_din[7]}}, mem_din[7:0], result[7:0]};
+            default: return = 0;
+        endcase
+    endfunction
 
 
     always @(posedge clk) begin
@@ -46,8 +60,6 @@ module memory_controller(
             ready <= 0;
             current_data <= 0;
             result <= 0;
-
-
         end 
         else if(rdy) begin
             if(ready)begin
@@ -55,22 +67,22 @@ module memory_controller(
             end
             else begin
                 case(work_cycle)
-                    3`b000: begin
+                    3'b000: begin
                         if(need_work) begin
                             result <= data;
                             work <= 1;
                             work_origin_address <= addr;
                             work_wr <= wr;
                             work_type <= type;
-                            if(work_type[1:0] == 2`b00) begin
-                                work_cycle <= 3`b000;
+                            if(work_type[1:0] == 2'b00) begin
+                                work_cycle <= 3'b000;
                                 current_data <= 0;
                                 work_wr <= 0;
                                 work_current_address <= addr;
                                 ready <= 1;
                             end
                             else begin
-                                work_cycle <= 3`b001;
+                                work_cycle <= 3'b001;
                                 current_data <= data[15:8];
                                 work_wr <= wr;
                                 work_current_address <= addr + 1;
@@ -78,16 +90,16 @@ module memory_controller(
                             end
                         end
                     end
-                    3`b001: begin
+                    3'b001: begin
                         result[7:0] <= mem_din;
-                        if(work_type[1:0] == 2`b01) begin
-                            work_cycle <= 3`b000;
+                        if(work_type[1:0] == 2'b01) begin
+                            work_cycle <= 3'b000;
                             current_data <= 0;
                             work_wr <= 0;
                             ready <= 1;
                         end
                         else begin
-                            work_cycle <= 3`b010;
+                            work_cycle <= 3'b010;
                             current_data <= data[23:16];
                             work_wr <= wr;
                             work_current_address <= work_origin_address + 2;
@@ -96,19 +108,19 @@ module memory_controller(
                         
                     end
                     // 4 bytes
-                    3`b010: begin
+                    3'b010: begin
                         result[15:8] <= mem_din;
-                        current_addr <= work_current_address + 3;
+                        work_current_address <= work_origin_address + 3;
                         current_data <= data[31:24];
                         work_wr <= wr;
-                        work_cycle <= 3`b011;
+                        work_cycle <= 3'b011;
                         ready <= 0;
                     end
-                    3`b011: begin
+                    3'b011: begin
                         result[23:16] <= mem_din;
                         current_data <= 0;
                         work_wr <= 0;
-                        work_cycle <= 3`b000;
+                        work_cycle <= 3'b000;
                         ready <= 1;
                     end
                 endcase
@@ -116,10 +128,13 @@ module memory_controller(
         end
     end
 
-    assign working = work_cycle == 3`b000 && need_work;
+    wire working = work_cycle == 3'b000 && need_work;
     assign mem_wr = working ? wr : work_wr;
-    assign mem_a = working ? addr : current_addr;
+    assign mem_a = working ? addr : work_current_address;
     assign mem_dout = working ? data[7:0] : current_data;
+    assign final_result = return(work_type, result, mem_din);
+
+
 
 endmodule
 
