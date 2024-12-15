@@ -78,7 +78,8 @@ module memory_controller(
                                 work_cycle <= 3'b000;
                                 current_data <= 0;
                                 work_wr <= 0;
-                                work_current_address <= addr;
+                                /* work_current_address <= addr; */
+                                work_current_address <= addr[17:16] == 2'b11 ? 0 : addr + 1;
                                 ready <= 1;
                             end
                             else begin

@@ -145,7 +145,7 @@ always @(posedge clk or posedge rst) begin
         if_addr <= 0;  
 
     end
-    else if(!rst)begin
+    else if(!rdy)begin
     end
     else if (!(need_begin))begin
         to_rob_ready <= 0;

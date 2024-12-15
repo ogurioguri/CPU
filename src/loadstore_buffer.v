@@ -109,8 +109,6 @@ always @(posedge clk or posedge rst)begin
         tail <= 0;
         size <= 0;
     end
-    else if(!rst)begin
-    end
     else if(rdy)begin
         size <= next_size;
         full <= next_full;
@@ -151,7 +149,7 @@ always @(posedge clk or posedge rst)begin
             commit[tail] <= 1;
         end
 
-        for(integer i = 0 ; i < lsb_size ; i = i + 1)begin
+        for(i = 0 ; i < lsb_size ; i = i + 1)begin
             if(busy[i])begin
                 if((rs_ready && rs1_has_depend[i] && rs_rob_id == rs1_depend[i]))begin
                     rs1_value[i] <= rs_value;
