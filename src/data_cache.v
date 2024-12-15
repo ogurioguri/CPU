@@ -63,18 +63,20 @@ module data_cache(
         .clk(clk),
         .rst(mc_rst),
         .rdy(rdy),
+
         .mem_din(mem_din),
         .mem_dout(mem_dout),
         .mem_a(mem_a),
         .mem_wr(mem_wr),
         .io_buffer_full(io_buffer_full),
+
         .valid(memory_use),
         .wr(memory_wr),
         .addr(memory_addr),
-        .len(memory_type),
+        .type(memory_type),
         .data(memory_data),
         .ready(memory_ready),
-        .res(memory_res)
+        .final_result(memory_res)
     );
 
     always @(posedge clk) begin

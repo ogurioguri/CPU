@@ -62,6 +62,8 @@ module decoder(
     input wire has_dep2,
     input wire [`robsize -1 : 0] input_dep1,
     input wire [`robsize -1 : 0] input_dep2,
+    output wire [4:0] rs1_reg_id,
+    output wire [4:0] rs2_reg_id,
 
 
     // clear the inst
@@ -206,7 +208,8 @@ always @(posedge clk or posedge rst) begin
 
 end
 assign need_inst = !need_begin;
-
+assign rs1_reg_id = rs1;
+assign rs2_reg_id = rs2;
 
 assign rs_r1 = rs1_value;
 assign rs_r2 = rs2_value;

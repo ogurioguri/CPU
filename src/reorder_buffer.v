@@ -114,7 +114,7 @@ module reorder_buffer(
     assign outrob_id_tail = rob_id_tail;
 
 
-    assign full = (rob_id_tail + 1) % rob_size_number == rob_id_head && busy[rob_id_head];
+    assign full =(rob_id_tail == rob_id_head || (rob_id_tail + 1) % rob_size_number == rob_id_head) && busy[rob_id_head];
     assign empty = rob_id_head == rob_id_tail && !busy[rob_id_head];
 
     wire need_set_reg = (rdy && busy[rob_id_head] && ready_issue[rob_id_head] && rob_type[rob_id_head] == `robtype_r);

@@ -72,6 +72,8 @@ wire dreg_has_dep1;
 wire dreg_has_dep2;
 wire [`robsize -1: 0] dreg_input_dep1;
 wire [`robsize -1: 0] dreg_input_dep2;
+wire [4:0] dreg_rs1_reg_id;
+wire [4:0] dreg_rs2_reg_id;
 
 wire dc_clear;
 wire [31:0] if_addr;
@@ -92,8 +94,8 @@ wire [4:0] lsb_rob_id_out;
 //rs
 wire rs_full;
 wire rs_ready;
-wire rs_rob_id;
-wire rs_value;
+wire [`robsize -1 : 0]rs_rob_id;
+wire [31 : 0]rs_value;
 
 decoder dc(
   .rdy(rdy_in),
@@ -147,6 +149,8 @@ decoder dc(
   .has_dep2(dreg_has_dep2),
   .input_dep1(dreg_input_dep1),
   .input_dep2(dreg_input_dep2),
+  .rs1_reg_id(dreg_rs1_reg_id),
+  .rs2_reg_id(dreg_rs2_reg_id),
 
   .clear_inst(dc_clear),
   .if_addr(if_addr)
@@ -290,12 +294,12 @@ reservation_station rs(
   .rs_value(rs_value),
 
   .rs_shot(rsalu_rs_shot),
-  .r1(rsalu_r1),
-  .r2(rsalu_r2),
-  .rob_id(rsalu_rob_id),
-  .work_type(rsalu_work_type),
+  .alu_r1(rsalu_r1),
+  .alu_r2(rsalu_r2),
+  .alu_rob_id(rsalu_rob_id),
+  .alu_work_type(rsalu_work_type),
   .alu_ready(rsalu_ready),
-  .alu_rob_id(rsalu_inputalu_rob_id),
+  .inputalu_rob_id(rsalu_inputalu_rob_id),
   .alu_value(rsalu_value)
 );
 
@@ -327,6 +331,7 @@ loadstore_buffer lsb(
   .has_dep2(dlsb_lsb_has_dep2),
   .offset(dlsb_lsb_offset),
   .rob_id(dlsb_lsb_rob_id),
+  .inst_type(dlsb_lsb_type),
   .full(lsb_full),
  
   .need_cache(lsbcache_need_cache),
@@ -353,6 +358,7 @@ alu alu(
   .rdy(rdy_in),
 
   .valid(rsalu_rs_shot),
+  .work_type(rsalu_work_type),
   .r1(rsalu_r1),
   .r2(rsalu_r2),
   .inst_rob_id(rsalu_rob_id),
@@ -393,12 +399,14 @@ register_file register(
   .rst(rst_in),
   .rdy(rdy_in),
 
-  .rs1_reg_value(dreg_rs1_reg_value),
-  .rs2_reg_value(dreg_rs2_reg_value),
+  .id1(dreg_rs1_reg_id),
+  .id2(dreg_rs2_reg_id),
   .has_dep1(dreg_has_dep1),
   .has_dep2(dreg_has_dep2),
-  .input_dep1(dreg_input_dep1),
-  .input_dep2(dreg_input_dep2),
+  .dep1(dreg_input_dep1),
+  .dep2(dreg_input_dep2),
+  .value1(dreg_rs1_reg_value),
+  .value2(dreg_rs2_reg_value),
 
   .need_set_reg_value(robreg_need_set_reg_value),
   .need_set_reg_dep(robreg_need_set_reg_dep),

@@ -20,7 +20,7 @@ module loadstore_buffer (
     input wire has_dep2,
     input wire [11:0] offset,
     input wire [4:0] rob_id,
-    input wire [`lsb_type_size:0] inst_type,
+    input wire [`lsb_type_size -1:0] inst_type,
     output reg full,
 
     // to cache
@@ -37,12 +37,12 @@ module loadstore_buffer (
     // to reorder buffer
     input wire rob_full,
     input wire rob_empty,
-    input wire [`robsize : 0] head_id,
+    input wire [`robsize -1 : 0] head_id,
 
     //to reservation station : 
     //the result of load should be culculated in reservation station
     input wire rs_ready,
-    input wire [`robsize : 0] rs_rob_id,
+    input wire [`robsize -1 : 0] rs_rob_id,
     input wire [31:0] rs_value
 
 );
@@ -71,7 +71,7 @@ assign ready_pop = cache_ready;
 
 wire next_size = (decoder_ready && !ready_pop) ? size + 1 : (!decoder_ready && ready_pop) ? size - 1 : size;
 // leave a space
-wire next_full = (next_size == `lsb_size_bit -1) ? 1 : 0;
+wire next_full = next_size == lsb_size || (next_size + 1) == lsb_size ;
 reg working;
 //store need confirm
 wire next_inst_number = commit[head] ? head + 1 : head;

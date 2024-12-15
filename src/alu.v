@@ -1,3 +1,4 @@
+`include "const.v"
 module alu(
     input wire clk,
     input wire rst,
@@ -8,9 +9,9 @@ module alu(
     input wire [4:0] work_type,// the thrid bit is used to indicate whether the signed
     input wire [31:0] r1,
     input wire [31:0] r2,
-    input wire [1:0] inst_rob_id,
+    input wire [`robsize -1:0] inst_rob_id,
     output reg ready,
-    output reg [1:0] rob_id,
+    output reg [`robsize -1:0] rob_id,
     output reg [31:0] value
 );
     // the input work_type is 3 bits wide
