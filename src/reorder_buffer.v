@@ -12,7 +12,6 @@ module reorder_buffer(
     input wire [31:0] inst_imm,
     input wire [31:0] inst_pc,
     input wire [31:0] inst_jump_addr,
-    input wire inst_jump,
 
     output wire full,
     output wire empty,

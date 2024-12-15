@@ -23,7 +23,7 @@ module decoder(
     output reg [31 : 0] rob_address,
     output reg [31 : 0]rob_jump_address,
     input wire rob_full,
-    input wire [`robsize : 0] next_position,
+    input wire [`robsize -1 : 0] next_position,
 
 
     //to lsb
