@@ -27,10 +27,10 @@ end
 
 initial begin
 `ifndef ONLINE_JUDGE
-  $dumpfile("test.vcd");
-  $dumpvars(0, testbench);
+  /* $dumpfile("test.vcd");
+  $dumpvars(0, testbench); */
 `endif
-  #500 $finish;
+  #300000000 $finish;
 end
 
 endmodule
