@@ -40,7 +40,6 @@ module alu(
             value  <= 0;
         end
         else if (!rdy) begin
-            // do nothing
         end
         else if (!valid) begin
             ready <= 0;
@@ -49,8 +48,8 @@ module alu(
             ready  <= 1'b1;
             rob_id <= inst_rob_id;
 
-            if (work_type[4]) begin
-                case (work_type[2:0])
+            if (work_type[0]) begin
+                case (work_type[4:2])
                     beq: value <= r1 == r2;
                     bne: value <= r1 != r2;
                     blt: value <= $signed(r1) < $signed(r2);
@@ -61,13 +60,13 @@ module alu(
                 endcase
             end
             else begin
-                case (work_type[2:0])
-                    AddSub: value <= work_type[3] ? r1 - r2 : r1 + r2;
+                case (work_type[4:2])
+                    AddSub: value <= work_type[1] ? r1 - r2 : r1 + r2;
                     Sll: value <= r1 << r2[4:0];
                     Slt: value <= $signed(r1) < $signed(r2);
                     Sltu: value <= $unsigned(r1) < $unsigned(r2);
                     Xor: value <= r1 ^ r2;
-                    SrlSra: value <= work_type[3] ? $signed(r1) >>> r2[4:0] : r1 >> r2[4:0];
+                    SrlSra: value <= work_type[1] ? $signed(r1) >>> r2[4:0] : r1 >> r2[4:0];
                     Or: value <= r1 | r2;
                     And: value <= r1 & r2;
                 endcase

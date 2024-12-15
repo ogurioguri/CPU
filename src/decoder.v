@@ -162,7 +162,7 @@ always @(posedge clk or posedge rst) begin
 
         rob_type <= inst_in == 32'hff9ff06f ? `robtype_exit : (opcode == opcode_b ? `robtype_b : (opcode == opcode_s ? `robtype_s : `robtype_r));
         lsb_type <= {function3,!(opcode == opcode_l)};
-        rs_type <= {function3,(opcode == opcode_b)};
+        rs_type <= {function3,(opcode == opcode_r && inst_in[30]),(opcode == opcode_b)};
 
         rs1_value <= rs1_reg_value;
         rs2_value <= next_rs2_val;

@@ -410,11 +410,18 @@ register_file register(
 
   .need_set_reg_value(robreg_need_set_reg_value),
   .need_set_reg_dep(robreg_need_set_reg_dep),
-  .set_reg_id(robreg_set_reg_id),
-  .set_reg_val(robreg_set_reg_val),
+  .set_value_reg_id(robreg_set_reg_id),
+  .set_val(robreg_set_reg_val),
   .set_reg_rob_id(robreg_set_reg_rob_id),
-  .set_dep_reg(robreg_set_dep_reg),
-  .set_dep_rob_id(robreg_set_dep_rob_id)
+  .set_dep_reg_id(robreg_set_dep_reg),
+  .set_dep_rob_id(robreg_set_dep_rob_id),
+
+  .need_rob_id1(robreg_need_rob_id1),
+  .need_rob_id2(robreg_need_rob_id2),
+  .rob_value1_ready(robreg_rob_value1_ready),
+  .rob_value1(robreg_rob_value1),
+  .rob_value2_ready(robreg_rob_value2_ready),
+  .rob_value2(robreg_rob_value2)
 );
 
 
