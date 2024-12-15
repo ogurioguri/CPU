@@ -96,11 +96,13 @@ wire rs_full;
 wire rs_ready;
 wire [`robsize -1 : 0]rs_rob_id;
 wire [31 : 0]rs_value;
+wire decoder_rst;
+assign decoder_rst = rst_in | rob_clear;
 
 decoder dc(
   .rdy(rdy_in),
   .clk(clk_in),
-  .rst(rst_in),
+  .rst(decoder_rst),
 
   .need_inst(df_need_inst),
   .PC(df_pc),
@@ -398,6 +400,8 @@ register_file register(
   .clk(clk_in),
   .rst(rst_in),
   .rdy(rdy_in),
+
+  .clear(rob_clear),
 
   .id1(dreg_rs1_reg_id),
   .id2(dreg_rs2_reg_id),

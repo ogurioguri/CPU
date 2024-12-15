@@ -11,7 +11,7 @@
 `define reg_size_bit 5
 `define reg_size 32
 `define lsb_type_size 4
-`define rs_type_size 4
+`define rs_type_size 5
 
 
 
