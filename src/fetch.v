@@ -28,13 +28,15 @@ module fetch(
     reg ready_work;
     wire [31:0] next_PC;
     assign fetch_ready_in = ready_work;
-    assign next_PC = clear ? new_pc : clear_decoder ? new_pc_decoder : next_PC + 4;
+    assign next_PC = clear ? new_pc : clear_decoder ? new_pc_decoder : output_next_PC + 4;
     always @(posedge clk) begin
         if (rst) begin
             inst_ready_out <= 0;
             inst_addr <= 0;
             inst <= 0;
             ready_work <= 1;
+            // begin from 0
+            output_next_PC <= 0;
         end
         else if (!rdy) begin
         end

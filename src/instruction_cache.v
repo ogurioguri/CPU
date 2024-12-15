@@ -15,7 +15,7 @@ module instruction_cache(
 
 );
     localparam cache_size = 1 << `cache_size_bit;
-    localparam tag_bit = 10;
+    localparam tag_bit = 2;
 
     reg [31:0] data_array [0:cache_size-1];
     reg [tag_bit - 1 :0] addr_array [0:cache_size-1];
@@ -28,9 +28,9 @@ module instruction_cache(
     assign hit = busy[index] && addr_array[index] == tag;
     assign final_result = data_array[index];
 
-    integer i;
     always @(posedge clk) begin
-        if (rst) begin
+        if (rst) begin: resert
+            integer i;
             for (i = 0; i < cache_size; i = i + 1) begin
                 data_array[i] <= 0;
                 addr_array[i] <= 0;
