@@ -92,7 +92,7 @@ decoder dc(
   .rob_imm(drob_rob_imm),
   .rob_address(drob_rob_address),
   .rob_jump_address(drob_rob_jump_address),
-  .rob_pc(drob_rob_pc),
+  .rob_full(rob_full),
   .next_position(rob_tail),
 
   .lsb_full(lsb_full),

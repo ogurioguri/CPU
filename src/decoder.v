@@ -15,7 +15,7 @@ module decoder(
     output reg to_rob_ready,
     /* output reg [4:0] rob_rs1;
     output reg [4:0] rob_rs2; */
-    output reg [4:0] rob_id,
+    output reg [4:0] rob_rd,
     /* output wire rob_rs1_valid;
     output wire rob_rs2_valid;  */
     output reg [`rob_type_bit -1 :0] rob_type,
@@ -126,7 +126,7 @@ always @(posedge clk or posedge rst) begin
         last_inst_addr <= 32'hffffffff;
 
         to_rob_ready <= 0;
-        rob_id <= 0;
+        rob_rd <= 0;
         rob_type <= 0;
         rob_imm <= 0;
         rob_address <= 0;
@@ -168,6 +168,7 @@ always @(posedge clk or posedge rst) begin
         is_dep2 <=(need_rs2 && has_dep2);
         dep1 <= input_dep1;
         dep2 <= input_dep2;
+        rob_rd <= rd;   
 
         lsb_offset <= (opcode == opcode_l) ? immI : immS;
         rob_address <= PC;
@@ -205,7 +206,6 @@ always @(posedge clk or posedge rst) begin
 
 end
 assign need_inst = !need_begin;
-assign rob_rd = rd;
 
 
 assign rs_r1 = rs1_value;
