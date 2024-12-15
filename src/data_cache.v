@@ -39,6 +39,7 @@ module data_cache(
     wire memory_ready;
     wire [31:0] memory_res;
     wire memory_wr;
+    wire mc_rst;
 
     wire inst_hit;
     wire [31:0] cache_res;

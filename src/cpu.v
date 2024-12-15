@@ -59,12 +59,12 @@ wire drs_to_rs_ready;
 wire [4:0] drs_rs_rd;
 wire [31:0] drs_rs_r1;
 wire [31:0] drs_rs_r2;
-wire [`reg_size: 0] drs_rs_dep1;
-wire [`reg_size: 0] drs_rs_dep2;
+wire [`reg_size -1: 0] drs_rs_dep1;
+wire [`reg_size -1: 0] drs_rs_dep2;
 wire drs_rs_has_dep1;
 wire drs_rs_has_dep2;
-wire [`robsize: 0] drs_rs_rob_id;
-wire [`rs_type_size: 0] drs_rs_type;
+wire [`robsize -1: 0] drs_rs_rob_id;
+wire [`rs_type_size -1: 0] drs_rs_type;
 
 wire [31:0] dreg_rs1_reg_value;
 wire [31:0] dreg_rs2_reg_value;
@@ -75,6 +75,25 @@ wire [`robsize -1: 0] dreg_input_dep2;
 
 wire dc_clear;
 wire [31:0] if_addr;
+
+
+//rob
+wire rob_full;
+wire rob_empty;
+wire [`robsize -1 :0]rob_head;
+wire [`robsize -1 :0]rob_tail;
+
+//lsb
+wire lsb_full;
+wire lsb_ready_out;
+wire [31:0] lsb_value_out;
+wire [4:0] lsb_rob_id_out;
+
+//rs
+wire rs_full;
+wire rs_ready;
+wire rs_rob_id;
+wire rs_value;
 
 decoder dc(
   .rdy(rdy_in),
@@ -135,7 +154,7 @@ decoder dc(
 );
 
 wire rob_clear;
-wire rob_new_pc;
+wire [31:0] rob_new_pc;
 
 wire fc_fetch_ready_in;
 wire [31:0] fc_inst_in;
@@ -170,10 +189,6 @@ fetch fc(
 //wire lsb_rob_id;
 //wire lsb_value;
 //wire lsb_ready;
-wire rob_full;
-wire rob_empty;
-wire rob_head;
-wire rob_tail;
 
 wire robreg_need_set_reg_value;
 wire robreg_need_set_reg_dep;
@@ -195,13 +210,12 @@ reorder_buffer rob(
   .rst(rst_in),
   .rdy(rdy_in),
 
-  .decoder_ready(dc_next_position),
+  .decoder_ready(drob_to_rob_ready),
   .inst_type(drob_rob_type),
   .inst_rd(drob_rob_rd),
   .inst_imm(drob_rob_imm),
-  .inst_pc(drob_rob_pc),
-  .inst_jump_addr(drob_rob_address),
-  .inst_jump(drob_rob_jump_address),
+  .inst_pc(drob_rob_address),
+  .inst_jump_addr(drob_rob_jump_address),
 
   .full(rob_full),
   .empty(rob_empty),
@@ -235,11 +249,6 @@ reorder_buffer rob(
   .rob_value2(robreg_rob_value2)
 );
 
-wire rs_full;
-
-wire rs_ready;
-wire rs_rob_id;
-wire rs_value;
 
 //lsb_ready
 //lsb_rob_id
@@ -290,9 +299,6 @@ reservation_station rs(
   .alu_value(rsalu_value)
 );
 
-wire lsb_ready_out;
-wire [31:0] lsb_value_out;
-wire [4:0] lsb_rob_id_out;
 
 wire lsbcache_need_cache;
 wire [31:0] lsbcache_cache_addr;
@@ -402,15 +408,6 @@ register_file register(
   .set_dep_reg(robreg_set_dep_reg),
   .set_dep_rob_id(robreg_set_dep_rob_id)
 );
-
-
-
-
-
-
-
-
-
 
 
 
