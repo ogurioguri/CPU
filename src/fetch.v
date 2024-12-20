@@ -45,16 +45,17 @@ module fetch(
             inst_addr <= 0;
             inst <= 0;
             ready_work <= 1;
+            output_next_PC <= next_PC;
         end
-        else if (fetch_ready_in && ready_work && need_inst) begin
+        else if (instcache_ready_out && ready_work && need_inst && !inst_in ==0) begin
             output_next_PC <= next_PC;
             inst_ready_out <= 1;
-            inst_addr <= next_PC;
+            inst_addr <= output_next_PC;
             inst <= inst_in;
 
             case (inst_in[6:0])
                 7'b1101111, 7'b1100111, 7'b1100011: begin
-                    ready_work <= 1;
+                    ready_work <= 0;
                 end
             endcase
         end

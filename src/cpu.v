@@ -39,6 +39,7 @@ wire [`rob_type_bit -1 :0] drob_rob_type;
 wire [31:0] drob_rob_imm;
 wire [31:0] drob_rob_address;
 wire [31:0] drob_rob_jump_address;
+wire drob_inst_ready;
  /* wire drob_rob_jump;
 wire drob_rob_pc;
  */
@@ -54,6 +55,7 @@ wire dlsb_lsb_has_dep1;
 wire dlsb_lsb_has_dep2;
 wire [`robsize -1: 0] dlsb_lsb_rob_id;
 wire [`lsb_type_size -1: 0] dlsb_lsb_type;
+
 
 wire drs_to_rs_ready;
 wire [4:0] drs_rs_rd;
@@ -84,12 +86,13 @@ wire rob_full;
 wire rob_empty;
 wire [`robsize -1 :0]rob_head;
 wire [`robsize -1 :0]rob_tail;
+wire rob_clear;
 
 //lsb
 wire lsb_full;
 wire lsb_ready_out;
 wire [31:0] lsb_value_out;
-wire [4:0] lsb_rob_id_out;
+wire [`robsize -1 :0] lsb_rob_id_out;
 
 //rs
 wire rs_full;
@@ -117,6 +120,7 @@ decoder dc(
   .rob_jump_address(drob_rob_jump_address),
   .rob_full(rob_full),
   .next_position(rob_tail),
+  .inst_ready(drob_inst_ready),
 
   .lsb_full(lsb_full),
 
@@ -133,7 +137,7 @@ decoder dc(
   .lsb_rob_id(dlsb_lsb_rob_id),
   .lsb_type(dlsb_lsb_type),
 
-  .rs_full(rs_ready),
+  .rs_full(rs_full),
   .to_rs_ready(drs_to_rs_ready),
   .rs_rd(drs_rs_rd),
   .rs_r1(drs_rs_r1),
@@ -159,7 +163,6 @@ decoder dc(
 
 );
 
-wire rob_clear;
 wire [31:0] rob_new_pc;
 
 wire fc_fetch_ready_in;
@@ -222,6 +225,7 @@ reorder_buffer rob(
   .inst_imm(drob_rob_imm),
   .inst_pc(drob_rob_address),
   .inst_jump_addr(drob_rob_jump_address),
+  .inst_ready(drob_inst_ready),
 
   .full(rob_full),
   .empty(rob_empty),

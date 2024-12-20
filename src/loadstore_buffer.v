@@ -8,18 +8,18 @@ module loadstore_buffer (
 
     output wire ready_out,
     output wire [31:0] value_out,
-    output wire [4:0] rob_id_out,
+    output wire [`robsize -1:0] rob_id_out,
 
     // to decoder 
     input wire decoder_ready,
     input wire [31:0] r1,
     input wire [31:0] r2,
-    input wire [4:0] dep1,
-    input wire [4:0] dep2,
+    input wire [`robsize -1:0] dep1,
+    input wire [`robsize -1:0] dep2,
     input wire has_dep1,
     input wire has_dep2,
     input wire [11:0] offset,
-    input wire [4:0] rob_id,
+    input wire [`robsize -1:0] rob_id,
     input wire [`lsb_type_size -1:0] inst_type,
     output reg full,
 
@@ -69,21 +69,21 @@ reg [`lsb_size_bit : 0] size;
 wire ready_pop;
 assign ready_pop = cache_ready;
 
-wire next_size = (decoder_ready && !ready_pop) ? size + 1 : (!decoder_ready && ready_pop) ? size - 1 : size;
+wire [`lsb_size_bit : 0]next_size = (decoder_ready && !ready_pop) ? size + 1 : (!decoder_ready && ready_pop) ? size - 1 : size;
 // leave a space
 wire next_full = next_size == lsb_size || (next_size + 1) == lsb_size ;
 reg working;
 //store need confirm
-wire next_inst_number = commit[head] ? head + 1 : head;
+wire [`lsb_size_bit -1 : 0] next_inst_number = working ? head + 1 : head;
 wire risk = work_type[next_inst_number][0];
 wire shot_able = busy[next_inst_number] && !rs1_has_depend[next_inst_number] && !rs2_has_depend[next_inst_number] && (!risk || (!rob_empty && lsb_rob_id[next_inst_number] == head_id));
-wire could_shot = shot_able && !working && cache_ready; 
+wire could_shot = shot_able && (!working || cache_ready); 
 //sign extend
-wire address = rs1_value[next_inst_number] + {{20{lsb_offset[next_inst_number][11]}}, lsb_offset[next_inst_number]};
+wire [31:0] address = rs1_value[next_inst_number] + {{20{lsb_offset[next_inst_number][11]}}, lsb_offset[next_inst_number]};
 
 assign ready_out = cache_ready;
 assign value_out = cache_result;
-assign rob_id_out = lsb_rob_id[next_inst_number];
+assign rob_id_out = lsb_rob_id[head];
 
 assign need_cache = working;
 
@@ -92,6 +92,7 @@ integer i;
 always @(posedge clk or posedge rst)begin
     if (rst)  begin
         full <= 0;
+        working <= 0;
         for(i=0 ;i<lsb_size;i=i+1) begin
             busy[i] <= 0;
             lsb_rob_id[i] <= 0;
@@ -120,7 +121,7 @@ always @(posedge clk or posedge rst)begin
             if(work_type[next_inst_number] == `robtype_s)begin
                 cache_value <= rs2_value[next_inst_number];
             end
-            else begin
+            else begin 
                 cache_value <= 0;
             end
         end
@@ -135,7 +136,7 @@ always @(posedge clk or posedge rst)begin
         end
 
         if(decoder_ready && !full)begin
-            tail <= tail + 1;
+            tail <= (tail + 1) % lsb_size;
             busy[tail] <= 1;
             lsb_rob_id[tail] <= rob_id;
             work_type[tail] <= inst_type;

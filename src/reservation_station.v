@@ -76,10 +76,10 @@ module reservation_station (
         wire [`rs_size_bit - 1 : 0] execute_pos[1:2*rs_size - 1];
         wire [`rs_size_bit - 1 : 0] spare_pos[1:2*rs_size - 1];
         for(i = 0 ; i < rs_size; i = i + 1) begin
-            assign spare[i + rs_size - 1] = ~busy[i];
-            assign execute[i + rs_size - 1] = ready[i];
-            assign execute_pos[i + rs_size - 1] = i;
-            assign spare_pos[i + rs_size - 1] = i;
+            assign spare[i + rs_size ] = ~busy[i];
+            assign execute[i + rs_size ] = ready[i];
+            assign execute_pos[i + rs_size ] = i;
+            assign spare_pos[i + rs_size ] = i;
         end
         for(i = 1; i < rs_size; i = i + 1) begin
             assign spare[i] = spare[i<<1] | spare[i<<1|1];
@@ -95,6 +95,8 @@ module reservation_station (
     assign next_size = (decoder_ready && rdy) ? ready_shot? size : size + 1 : ready_shot ? size - 1 : size;  
     assign next_full = next_size == rs_size;
 
+
+    assign rs_shot = ready[shot_pos];
     assign alu_r1 = r1[shot_pos];
     assign alu_r2 = r2[shot_pos];
     assign alu_rob_id = rob_id[shot_pos];

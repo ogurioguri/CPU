@@ -74,7 +74,8 @@ module memory_controller(
                             work_origin_address <= addr;
                             work_wr <= wr;
                             work_type <= type;
-                            if(work_type[1:0] == 2'b00) begin
+                            //it can not be work_type
+                            if(type[1:0] == 2'b00) begin
                                 work_cycle <= 3'b000;
                                 current_data <= 0;
                                 work_wr <= 0;

@@ -1,5 +1,5 @@
-`define robsize 5
-`define rs_size_bit 5
+`define robsize 3
+`define rs_size_bit 3
 `define rob_bit 2 // the size of rob queue
 
 `define rob_type_bit 2

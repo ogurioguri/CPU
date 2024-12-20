@@ -22,8 +22,10 @@ module decoder(
     output reg [31:0] rob_imm,
     output reg [31 : 0] rob_address,
     output reg [31 : 0]rob_jump_address,
+    output reg inst_ready,
     input wire rob_full,
     input wire [`robsize -1 : 0] next_position,
+
 
 
     //to lsb
@@ -119,13 +121,14 @@ reg [`reg_size:0] dep2;
 
 wire need_begin = last_inst_addr != PC && !rob_full && (!rs_full || !need_rs) && (!lsb_full || !need_lsb)  && instcache_ready_out;
 wire [31:0] next_rs2_val = opcode == opcode_i ? ((function3 == 3'b001 || function3 == 3'b101) ? shamt : {{20{immI[11]}}, immI}) : rs2_reg_value;
-wire preject = 1'b1;
+wire predict= 1'b1;
 
 always @(posedge clk or posedge rst) begin
     if(rst) begin
         rs1_value <= 0;
         rs2_value <= 0;
-        last_inst_addr <= 32'hffffffff;
+        // can not be 0
+        last_inst_addr <= 32'habcdefff;
 
         to_rob_ready <= 0;
         rob_rd <= 0;
@@ -133,6 +136,7 @@ always @(posedge clk or posedge rst) begin
         rob_imm <= 0;
         rob_address <= 0;
         rob_jump_address<= 0;
+        inst_ready <= 0;
 
         to_lsb_ready <= 0;
         lsb_type <= 0;
@@ -175,6 +179,7 @@ always @(posedge clk or posedge rst) begin
         lsb_offset <= (opcode == opcode_l) ? immI : immS;
         rob_address <= PC;
         rob_jump_address <= PC + 4;
+        inst_ready <= opcode == opcode_lui || opcode == opcode_auipc || opcode == opcode_j || opcode == opcode_jalr;
     
 
         case(opcode)
@@ -184,6 +189,7 @@ always @(posedge clk or posedge rst) begin
             opcode_jalr:begin
                 rob_imm <= PC + 4;
                 clear_inst <= 1;
+                if_addr <= (rs1_reg_value + {{20{immI[11]}}, immI}) & ~32'b1;
             end
             opcode_b:begin
                 clear_inst <= 1;
@@ -192,7 +198,7 @@ always @(posedge clk or posedge rst) begin
             opcode_j:begin
                 rob_imm <= PC + 4;
                 clear_inst <= 1;
-                if_addr <= PC + (rs1_reg_value + {{20{immI[10]}}, immI}) & ~32'b1; 
+                if_addr <= PC + {{19{immJ[11]}}, immJ, 1'b0}; 
             end
             opcode_lui:begin
                 rob_imm <=  {immU, 12'b0};
@@ -216,7 +222,10 @@ assign rs_r2 = rs2_value;
 assign rs_rd = rd;
 assign rs_dep1 = dep1;  
 assign rs_dep2 = dep2;
+assign rs_has_dep1 = is_dep1;
+assign rs_has_dep2 = is_dep2;
 assign rs_rob_id = next_position;
+
 
 assign lsb_r1 = rs1_value;
 assign lsb_r2 = rs2_value;

@@ -12,6 +12,7 @@ module reorder_buffer(
     input wire [31:0] inst_imm,
     input wire [31:0] inst_pc,
     input wire [31:0] inst_jump_addr,
+    input wire inst_ready,
 
     output wire full,
     output wire empty,
@@ -67,6 +68,7 @@ module reorder_buffer(
     always @(posedge clk or posedge rst) begin
         if(rst || (clear && rdy)) begin
             clear <= 0;
+            next_pc <= 0;
             for(i = 0; i < rob_size_number; i = i + 1) begin
                 busy[i] <= 0;
                 ready_issue[i] <= 0;
@@ -91,7 +93,7 @@ module reorder_buffer(
             if(decoder_ready) begin
                 rob_id_tail <= (rob_id_tail + 1) % rob_size_number;
                 busy[rob_id_tail] <= 1;
-                ready_issue[rob_id_tail] <= 1;
+                ready_issue[rob_id_tail] <= inst_ready;
                 rob_type[rob_id_tail] <= inst_type;
                 rob_rd[rob_id_tail] <= inst_rd;
                 rob_value[rob_id_tail] <= inst_imm;
@@ -105,10 +107,12 @@ module reorder_buffer(
                     clear <= 1;
                     next_pc <= rob_jump_addr[rob_id_head];
                 end
+                rob_id_head <= (rob_id_head + 1) % rob_size_number;
             end
             
         end
     end
+    wire can_shot = busy[rob_id_head] && ready_issue[rob_id_head];
 
     assign outrob_id_head = rob_id_head;
     assign outrob_id_tail = rob_id_tail;
