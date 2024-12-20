@@ -38,7 +38,7 @@ module data_cache(
     reg [31:0] memory_data;
     wire memory_ready;
     wire [31:0] memory_res;
-    wire memory_wr;
+    reg memory_wr;
     wire mc_rst;
 
     wire inst_hit;
@@ -87,7 +87,7 @@ module data_cache(
             memory_addr <= 0;
             memory_type <= 0;
             memory_data <= 0;
-            
+            memory_wr <= 0;
         end
         else if (!rdy) begin
         end
@@ -100,6 +100,7 @@ module data_cache(
                 memory_addr <= data_addr;
                 memory_type <= data_type;
                 memory_data <= data_value;
+                memory_wr <=data_wr;
             end
             else if (inst_valid && !inst_hit) begin
                 work <= 1;
@@ -108,6 +109,7 @@ module data_cache(
                 memory_addr <= inst_addr;
                 memory_type <= 3'b010 ; // 4 bytes
                 memory_data <= 0;
+                memory_wr <= 0;
             end
         end
         else if(memory_ready) begin
