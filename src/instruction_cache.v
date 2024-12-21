@@ -15,15 +15,16 @@ module instruction_cache(
 
 );
     localparam cache_size = 1 << `cache_size_bit;
-    localparam tag_bit = 2;
+    localparam tag_bit = 32 - `cache_size_bit;
 
     reg [31:0] data_array [0:cache_size-1];
     reg [tag_bit - 1 :0] addr_array [0:cache_size-1];
     reg busy [0:cache_size-1];
 
    //choose the tag and index(foolish)
-    wire [tag_bit - 1 :0] tag = addr[tag_bit : 1];
-    wire [ `cache_size_bit - 1 : 0] index = addr[`cache_size_bit + tag_bit - 1 : tag_bit + 1];
+   //the tag shoule be big
+    wire [tag_bit - 1 :0] tag = addr[ `cache_size_bit + tag_bit -1 : `cache_size_bit];
+    wire [ `cache_size_bit - 1 : 0] index = addr[`cache_size_bit -1 : 0];
 
     assign hit = busy[index] && addr_array[index] == tag;
     assign final_result = data_array[index];

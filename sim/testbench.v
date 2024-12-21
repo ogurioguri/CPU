@@ -28,7 +28,7 @@ end
 initial begin
 `ifndef ONLINE_JUDGE
   $dumpfile("test.vcd");
-  /* $dumpvars(0, testbench); */
+ /*  $dumpvars(0, testbench); */
 `endif
   #300000000 $finish;
 end

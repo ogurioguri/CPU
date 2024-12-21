@@ -119,6 +119,8 @@ module reservation_station (
                 dep1[j] <= 0;
                 dep2[j] <= 0;
             end
+            size <= 0;
+            rs_full <= 0;
         end
         else if(rdy) begin
             size <= next_size;
