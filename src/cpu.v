@@ -275,7 +275,7 @@ wire [`robsize -1 :0] rsalu_inputalu_rob_id;
 
 reservation_station rs(
   .clk(clk_in),
-  .rst(rst_in),
+  .rst(rst_in | rob_clear),
   .rdy(rdy_in),
 
   .rs_full(rs_full),
@@ -321,7 +321,7 @@ wire [31:0] lsbcache_cache_result;
 
 loadstore_buffer lsb(
   .clk(clk_in),
-  .rst(rst_in),
+  .rst(rst_in | rob_clear),
   .rdy(rdy_in),
 
   .ready_out(lsb_ready_out),

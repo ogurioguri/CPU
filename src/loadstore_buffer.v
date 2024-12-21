@@ -118,7 +118,7 @@ always @(posedge clk or posedge rst)begin
             cache_size <= work_type[next_inst_number][3:1];
             cache_way <= work_type[next_inst_number][0];
             cache_addr <= address;
-            if(work_type[next_inst_number] == `robtype_s)begin
+            if(work_type[next_inst_number][0])begin
                 cache_value <= rs2_value[next_inst_number];
             end
             else begin 
@@ -140,10 +140,10 @@ always @(posedge clk or posedge rst)begin
             busy[tail] <= 1;
             lsb_rob_id[tail] <= rob_id;
             work_type[tail] <= inst_type;
-            rs1_value[tail] <= r1;
-            rs2_value[tail] <= r2;
-            rs1_has_depend[tail] <= has_dep1;
-            rs2_has_depend[tail] <= has_dep2;
+            rs1_value[tail] <= !has_dep1 ? r1 : rs_ready && rs_rob_id == dep1 ? rs_value : ready_out && rob_id_out == dep1 ? value_out : 0;
+            rs2_value[tail] <= !has_dep2 ? r2 : rs_ready && rs_rob_id == dep2 ? rs_value : ready_out && rob_id_out == dep2 ? value_out : 0;
+            rs1_has_depend[tail] <= (has_dep1 && !(rs_ready && rs_rob_id == dep1) && !(ready_out && rob_id_out == dep1));
+            rs2_has_depend[tail] <= (has_dep2 && !(rs_ready && rs_rob_id == dep2) && !(ready_out && rob_id_out == dep2));
             rs1_depend[tail] <= dep1;
             rs2_depend[tail] <= dep2;
             lsb_offset[tail] <= offset;
