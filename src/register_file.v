@@ -49,8 +49,8 @@ module register_file(
     assign has_dep2 = has_depend2 && !rob_value2_ready;
     //assign dep1 = dep[id1];
     //assign dep2 = dep[id2];
-    assign dep1 = set_dep_reg_id == id1 ? set_dep_rob_id : depend[id1];
-    assign dep2 = set_dep_reg_id == id2 ? set_dep_rob_id : depend[id2];
+    assign dep1 = need_set_reg_dep && set_dep_reg_id == id1 ? set_dep_rob_id : depend[id1];
+    assign dep2 = need_set_reg_dep && set_dep_reg_id == id2 ? set_dep_rob_id : depend[id2];
     assign need_rob_id1 = dep1;
     assign need_rob_id2 = dep2;
 
