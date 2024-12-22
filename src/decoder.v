@@ -217,8 +217,8 @@ always @(posedge clk or posedge rst) begin
 
 end
 /* assign need_inst = !need_begin; */
-assign rs1_reg_id = rs1;
-assign rs2_reg_id = rs2;
+assign rs1_reg_id = need_rs1 ? rs1:0;
+assign rs2_reg_id = need_rs2 ? rs2:0;
 
 assign rs_r1 = rs1_value;
 assign rs_r2 = rs2_value;

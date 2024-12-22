@@ -21,6 +21,7 @@ module loadstore_buffer (
     input wire [11:0] offset,
     input wire [`robsize -1:0] rob_id,
     input wire [`lsb_type_size -1:0] inst_type,
+
     output reg full,
 
     // to cache
@@ -118,12 +119,13 @@ always @(posedge clk or posedge rst)begin
             cache_size <= work_type[next_inst_number][3:1];
             cache_way <= work_type[next_inst_number][0];
             cache_addr <= address;
-            if(work_type[next_inst_number][0])begin
+            cache_value <= rs2_value[next_inst_number];
+            /* if(work_type[next_inst_number][0])begin
                 cache_value <= rs2_value[next_inst_number];
             end
             else begin 
                 cache_value <= 0;
-            end
+            end */
         end
         else if(working && cache_ready)begin
             working <= 0;
@@ -147,7 +149,7 @@ always @(posedge clk or posedge rst)begin
             rs1_depend[tail] <= dep1;
             rs2_depend[tail] <= dep2;
             lsb_offset[tail] <= offset;
-            commit[tail] <= 1;
+            commit[tail] <= 0;
         end
 
         for(i = 0 ; i < lsb_size ; i = i + 1)begin

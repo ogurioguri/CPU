@@ -207,8 +207,8 @@ wire [`robsize -1:0] robreg_set_reg_rob_id;
 wire [4:0] robreg_set_dep_reg;
 wire [`robsize -1:0] robreg_set_dep_rob_id;
 
-wire [4 :0] robreg_need_rob_id1;
-wire [4 :0] robreg_need_rob_id2;
+wire [`robsize -1 :0] robreg_need_rob_id1;
+wire [`robsize -1 :0] robreg_need_rob_id2;
 wire robreg_rob_value1_ready;
 wire [31:0] robreg_rob_value1;
 wire robreg_rob_value2_ready;

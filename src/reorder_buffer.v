@@ -41,8 +41,8 @@ module reorder_buffer(
     output wire [4:0] set_dep_reg,
     output wire [`robsize -1: 0] set_dep_rob_id,
 
-    input wire [4:0] need_rob_id1,
-    input wire [4:0] need_rob_id2,
+    input wire [`robsize -1:0] need_rob_id1,
+    input wire [`robsize -1:0] need_rob_id2,
     output wire rob_value1_ready,
     output wire [31:0] rob_value1,
     output wire rob_value2_ready,
@@ -101,13 +101,14 @@ module reorder_buffer(
                 rob_jump_addr[rob_id_tail] <= inst_jump_addr;
             end
             if(busy[rob_id_head] && ready_issue[rob_id_head]) begin
+                rob_id_head <= (rob_id_head + 1) % rob_size_number;
                 busy[rob_id_head] <= 0;
                 ready_issue[rob_id_head] <= 0;
                 if(!rob_value[rob_id_head][0] && rob_type[rob_id_head] == `robtype_b) begin
                     clear <= 1;
                     next_pc <= rob_jump_addr[rob_id_head];
                 end
-                rob_id_head <= (rob_id_head + 1) % rob_size_number;
+                /* rob_id_head <= (rob_id_head + 1) % rob_size_number; */
             end
             
         end
@@ -124,14 +125,14 @@ module reorder_buffer(
     wire need_set_reg = (rdy && busy[rob_id_head] && ready_issue[rob_id_head] && rob_type[rob_id_head] == `robtype_r);
 
     assign need_set_reg_value = need_set_reg;
-    assign set_reg_id = rob_rd[rob_id_head];
-    assign set_reg_val = rob_value[rob_id_head];
-    assign set_reg_rob_id = rob_id_head;
+    assign set_reg_id = need_set_reg ? rob_rd[rob_id_head] : 0;
+    assign set_reg_val = need_set_reg ? rob_value[rob_id_head] :0;
+    assign set_reg_rob_id = need_set_reg ? rob_id_head :0 ;
 
     wire need_set_dep = rdy && decoder_ready && inst_type == `robtype_r;
     assign need_set_reg_dep = need_set_dep;
-    assign set_dep_reg = inst_rd;
-    assign set_dep_rob_id = rob_id_tail;
+    assign set_dep_reg =need_set_dep? inst_rd :0 ;
+    assign set_dep_rob_id = need_set_dep ? rob_id_tail :0;
 
     assign rob_value1_ready = ready_issue[need_rob_id1] || (rs_ready && rs_rob_id == need_rob_id1) || (lsb_ready && lsb_rob_id == need_rob_id1) || (decoder_ready && inst_ready && rob_id_tail == need_rob_id1); 
     assign rob_value1 = ready_issue[need_rob_id1] ? rob_value[need_rob_id1] : (rs_ready && rs_rob_id == need_rob_id1) ? rs_value : (lsb_ready && lsb_rob_id == need_rob_id1) ? lsb_value : inst_imm;

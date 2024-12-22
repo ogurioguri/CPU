@@ -54,8 +54,8 @@ module reservation_station (
 
     wire ready [0:rs_size - 1];
     wire next_full;
-    reg [`rs_size_bit - 1 : 0] size;
-    wire [`rs_size_bit - 1 : 0] next_size;
+    reg [`rs_size_bit  : 0] size;
+    wire [`rs_size_bit  : 0] next_size;
 
     wire ready_shot;
     wire [`rs_size_bit -1 : 0] shot_pos;
@@ -92,7 +92,7 @@ module reservation_station (
         assign space_pos = spare_pos[1];
     endgenerate
 
-    assign next_size = (decoder_ready && rdy) ? ready_shot? size : size + 1 : ready_shot ? size - 1 : size;  
+    assign next_size = (decoder_ready && rdy) ? (ready_shot? size : size + 1) : (ready_shot ? size - 1 : size);  
     assign next_full = next_size == rs_size;
 
 
@@ -129,8 +129,8 @@ module reservation_station (
                 busy[space_pos] <= 1;
                 rob_id[space_pos] <= inst_rob_id;
                 work_type[space_pos] <= inst_type;
-                r1[space_pos] <= inst_has_dep1 ? (rs_ready && rs_rob_id == inst_dep1) ? rs_value : (lsb_ready && lsb_rob_id == inst_dep1 ? lsb_value : 32'b0 ) : inst_r1;
-                r2[space_pos] <= inst_has_dep2 ? (rs_ready && rs_rob_id == inst_dep2) ? rs_value : (lsb_ready && lsb_rob_id == inst_dep2 ? lsb_value : 32'b0 ) : inst_r2;
+                r1[space_pos] <= inst_has_dep1 ? ((rs_ready && rs_rob_id == inst_dep1) ? rs_value : (lsb_ready && lsb_rob_id == inst_dep1 ? lsb_value : 32'b0 )) :inst_r1;
+                r2[space_pos] <= inst_has_dep2 ? ((rs_ready && rs_rob_id == inst_dep2) ? rs_value : (lsb_ready && lsb_rob_id == inst_dep2 ? lsb_value : 32'b0 )): inst_r2;
                 has_dep1[space_pos] <= inst_has_dep1 && !(rs_ready && rs_rob_id == inst_dep1) && !(lsb_ready && lsb_rob_id == inst_dep1);
                 has_dep2[space_pos] <= inst_has_dep2 && !(rs_ready && rs_rob_id == inst_dep2) && !(lsb_ready && lsb_rob_id == inst_dep2);
                 dep1[space_pos] <= inst_dep1;
