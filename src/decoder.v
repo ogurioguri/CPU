@@ -121,7 +121,7 @@ reg is_dep2;
 reg [`reg_size:0] dep1;
 reg [`reg_size:0] dep2;
 
-wire need_begin = last_inst_addr != PC && !rob_full && (!rs_full || !need_rs) && (!lsb_full || !need_lsb)  && instcache_ready_out;
+wire need_begin = last_inst_addr != PC && !rob_full && (!rs_full || !need_rs) && (!lsb_full || !need_lsb) && (rs1_need_ready && has_dep1)  && instcache_ready_out;
 assign need_inst = !(((last_inst_addr != PC) && instcache_ready_out) && ((need_rs && rs_full) || (need_lsb && lsb_full) || rob_full || (rs1_need_ready && has_dep1)));
 wire [31:0] next_rs2_val = opcode == opcode_i ? ((function3 == 3'b001 || function3 == 3'b101) ? shamt : {{20{immI[11]}}, immI}) : rs2_reg_value;
 wire predict= 1'b1;
