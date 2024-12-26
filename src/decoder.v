@@ -212,7 +212,7 @@ always @(posedge clk) begin
 
         rob_type <= inst_in == 32'hff9ff06f ? `robtype_exit : (opcode == opcode_b ? `robtype_b : (opcode == opcode_s ? `robtype_s : `robtype_r));
         lsb_type <= {function3,!(opcode == opcode_l)};
-        rs_type <= {function3,(opcode == opcode_r && inst_in[30]),(opcode == opcode_b)};
+        rs_type <= {function3,(opcode == opcode_r && op),(opcode == opcode_b)};
 
         rs1_value <= rs1_reg_value;
         rs2_value <= next_rs2_val;
@@ -235,16 +235,16 @@ always @(posedge clk) begin
             opcode_jalr:begin
                 rob_imm <= is_riscv ? PC + 4 : PC + 2 ;
                 clear_inst <= 1;
-                if_addr <= is_riscv ? (rs1_reg_value + {{20{immI[11]}}, immI}) & ~32'b1 : (rs1_reg_value + c_imm) & ~32'b1;
+                if_addr <= is_riscv ? ((rs1_reg_value + {{20{immI[11]}}, immI}) & ~32'b1) : ((rs1_reg_value + c_imm) & ~32'b1);
             end
             opcode_b:begin
                 clear_inst <= 1;
-                if_addr <= PC +  is_riscv ? {{19{immB[11]}}, immB, 1'b0} : c_imm;
+                if_addr <= PC +  (is_riscv ? {{19{immB[11]}}, immB, 1'b0} : c_imm);
             end
             opcode_j:begin
                 rob_imm <= is_riscv ? PC + 4 : PC + 2 ;
                 clear_inst <= 1;
-                if_addr <= PC + is_riscv ? {{19{immJ[11]}}, immJ, 1'b0} : c_imm; 
+                if_addr <= PC + (is_riscv ? {{19{immJ[11]}}, immJ, 1'b0} : c_imm); 
             end
             opcode_lui:begin
                 rob_imm <= is_riscv ? {immU, 12'b0} : c_imm;
@@ -291,7 +291,7 @@ function [4:0] get_rs1;
                 case (inst[15:13])
                     3'b000: get_rs1 = inst[11:7];
                     3'b001,3'b010,3'b101: get_rs1 = 0;
-                    3'b011: get_rs1 = (inst[11:7] == 3'b000) ? 2 : 0;
+                    3'b011: get_rs1 = (inst[11:7] == 2) ? 2 : 0;
                     3'b100,3'b110,3'b111:get_rs1 = 8 + inst[9:7];
                 endcase
             end

@@ -35,13 +35,14 @@ module fetch(
     localparam [6:0] opcode_auipc = 7'b0010111;
 
     wire [6:0] opcode_origin = inst_in[6:0];
-    assign is_riscv_ = inst_in[31:30] == 2'b11 && (opcode_origin == opcode_j || opcode_origin == opcode_r || opcode_origin == opcode_i || opcode_origin == opcode_l || opcode_origin == opcode_jalr || opcode_origin == opcode_b || opcode_origin == opcode_s || opcode_origin == opcode_lui || opcode_origin == opcode_auipc);
+    wire is_riscv_ = inst_in[1:0] == 2'b11;
 
     
     reg ready_work;
     wire [31:0] next_PC;
     assign fetch_ready_in = ready_work;
-    assign next_PC = clear ? new_pc : clear_decoder ? new_pc_decoder : is_riscv_ ?  output_next_PC + 4 : output_next_PC + 2;
+    assign next_PC = clear ? new_pc : clear_decoder ? new_pc_decoder : (is_riscv_ ?  output_next_PC + 4 : output_next_PC + 2);
+    wire [6:0] opcode = is_riscv_ ? inst_in[6:0] : get_opcode(inst_in);
     always @(posedge clk) begin
         if (rst) begin
             inst_ready_out <= 0;
@@ -69,13 +70,44 @@ module fetch(
             inst <= inst_in;
             is_riscv <= is_riscv_;
 
-            case (inst_in[6:0])
+            case (opcode)
                 7'b1101111, 7'b1100111, 7'b1100011: begin
                     ready_work <= 0;
                 end
             endcase
         end
     end
+
+    function [6:0] get_opcode;
+        input [31:0] inst;
+        case (inst[1:0])
+            2'b00: case (inst[15:13])
+                3'b000: get_opcode = opcode_i;
+                3'b010: get_opcode = opcode_l;
+                3'b110: get_opcode = opcode_s;
+            endcase
+            2'b01: begin
+                case (inst[15:13])
+                    3'b000: get_opcode = opcode_i;
+                    3'b001: get_opcode = opcode_j;
+                    3'b010: get_opcode = opcode_i;
+                    3'b011: get_opcode = (inst[11:7] == 2) ? opcode_i : opcode_lui;
+                    3'b100: get_opcode = (inst[11:10] == 2'b11) ? opcode_r :opcode_i; 
+                    3'b101: get_opcode = opcode_j;
+                    3'b110: get_opcode = opcode_b;
+                    3'b111: get_opcode = opcode_b;
+                endcase
+            end
+            2'b10: begin
+                case (inst[15:13])
+                    3'b000: get_opcode  = opcode_i;
+                    3'b010: get_opcode  = opcode_l;
+                    3'b100: get_opcode  = (inst[6:2] == 5'b00000) ? opcode_jalr : opcode_r;
+                    3'b110: get_opcode  = opcode_s;
+                endcase
+            end
+        endcase
+    endfunction
 
 
   
