@@ -32,6 +32,7 @@ wire df_need_inst;
 wire [31:0] df_pc;
 wire [31:0] df_inst_in;
 wire df_instcache_ready_out;
+wire df_is_riscv;
 
 wire drob_to_rob_ready;
 wire [4:0] drob_rob_rd;
@@ -111,6 +112,7 @@ decoder dc(
   .PC(df_pc),
   .inst_in(df_inst_in),
   .instcache_ready_out(df_instcache_ready_out),
+  .is_riscv(df_is_riscv),
 
   .to_rob_ready(drob_to_rob_ready),
   .rob_rd(drob_rob_rd),
@@ -184,6 +186,7 @@ fetch fc(
   .inst_ready_out(df_instcache_ready_out),
   .inst_addr(df_pc),
   .inst(df_inst_in),
+  .is_riscv(df_is_riscv),
 
   .fetch_ready_in(fc_fetch_ready_in),
   .inst_in(fc_inst_in),

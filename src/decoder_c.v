@@ -1,21 +1,16 @@
 `include "const.v"
-module decoder(
-
-    
+module decoder_v (
     input wire clk,
     input wire rst,
     input wire rdy,
     // to fetch
+
     output wire need_inst,
     input wire [31:0] PC,
-    input wire [31:0] inst_in,
+    input wire [15:0] inst_in,
     input wire instcache_ready_out,
-    input wire is_riscv,
 
-    /* //to decoder_c
-    output wire [15:0] inst_c,
-    output wire to_c_ready,
-    input wire c_need_inst, */
+    
 
     // to reorder buffer
     output reg to_rob_ready,
@@ -77,214 +72,65 @@ module decoder(
     // clear the inst
     output reg clear_inst,
     output reg [31:0] if_addr
-
-
-
 );
+    localparam AddSub = 3'b000;
+    localparam Sll =  3'b001;
+    localparam Slt =  3'b010;
+    localparam Sltu = 3'b011;
+    localparam Xor =  3'b100;
+    localparam Or =   3'b110;
+    localparam And =  3'b111;
+    localparam Srl =  3'b101;
+    localparam Sra =  3'b101;
 
+    localparam Beq =  3'b000;
+    localparam Bne =  3'b001;
+    localparam Blt =  3'b100;
+    localparam Bge =  3'b101;
+    localparam Bltu = 3'b110;
+    localparam Bgeu = 3'b111;
 
-localparam AddSub = 3'b000;
-localparam Sll =  3'b001;
-localparam Slt =  3'b010;
-localparam Sltu = 3'b011;
-localparam Xor =  3'b100;
-localparam Or =   3'b110;
-localparam And =  3'b111;
-localparam Srl =  3'b101;
-localparam Sra =  3'b101;
+    localparam Lb =   3'b000;
+    localparam Lh =   3'b001;
+    localparam Lw =   3'b010;
+    localparam Lbu =  3'b100;
+    localparam Lhu =  3'b101;
+    localparam Sb =  3'b000;
+    localparam Sh =  3'b001;
+    localparam Sw =  3'b010;
 
-localparam Beq =  3'b000;
-localparam Bne =  3'b001;
-localparam Blt =  3'b100;
-localparam Bge =  3'b101;
-localparam Bltu = 3'b110;
-localparam Bgeu = 3'b111;
+    localparam [6:0] opcode_j = 7'b1101111;
+    localparam [6:0] opcode_r = 7'b0110011;
+    localparam [6:0] opcode_i = 7'b0010011;
+    localparam [6:0] opcode_l = 7'b0000011;
+    localparam [6:0] opcode_jalr = 7'b1100111;
+    localparam [6:0] opcode_b = 7'b1100011;
+    localparam [6:0] opcode_s = 7'b0100011;
+    localparam [6:0] opcode_lui = 7'b0110111;
+    localparam [6:0] opcode_auipc = 7'b0010111;
 
-localparam Lb =   3'b000;
-localparam Lh =   3'b001;
-localparam Lw =   3'b010;
-localparam Lbu =  3'b100;
-localparam Lhu =  3'b101;
-localparam Sb =  3'b000;
-localparam Sh =  3'b001;
-localparam Sw =  3'b010;
+    //等效的opcode
+    wire [6:0] opcode = get_opcode(inst_in);
+    wire [4:0] rs1 = get_rs1(inst_in);
+    wire [4:0] rs2 = get_rs2(inst_in);
+    wire [2:0] function3 = get_function3(inst_in);
+    wire [4:0] rd;
+    reg [31:0] rs1_value; // ask the register file to get this
+    reg [31:0] rs2_value;
 
-localparam [6:0] opcode_j = 7'b1101111;
-localparam [6:0] opcode_r = 7'b0110011;
-localparam [6:0] opcode_i = 7'b0010011;
-localparam [6:0] opcode_l = 7'b0000011;
-localparam [6:0] opcode_jalr = 7'b1100111;
-localparam [6:0] opcode_b = 7'b1100011;
-localparam [6:0] opcode_s = 7'b0100011;
-localparam [6:0] opcode_lui = 7'b0110111;
-localparam [6:0] opcode_auipc = 7'b0010111;
-
-
-
-
-
-
-
-wire [4:0] rs1 = is_riscv ? inst_in[19:15] : get_rs1(inst_in);
-wire [4:0] rs2 = is_riscv ? inst_in[24:20] : get_rs2(inst_in);
-wire [4:0] rd  = is_riscv ? inst_in[11:7] : get_rd(inst_in);
-
-wire [4:0] shamt = inst_in[24:20];
-wire [31:12] immU = inst_in[31:12];
-wire [20:1] immJ = {inst_in[31], inst_in[19:12], inst_in[20], inst_in[30:21]};
-wire [11:0] immI = inst_in[31:20];
-wire [12:1] immB = {inst_in[31], inst_in[7], inst_in[30:25], inst_in[11:8]};
-wire [11:0] immS = {inst_in[31:25], inst_in[11:7]};
-
-wire [6:0] opcode = is_riscv ? inst_in[6:0] : get_opcode(inst_in);
-wire [2:0] function3 = is_riscv ? inst_in[14:12] : get_function3(inst_in);
-wire [7:0] function7 = inst_in[31:25] ;
-wire [31:0] c_imm  = get_imm(inst_in);
-wire op = is_riscv ? inst_in[30] : get_add(inst_in);  
-
-reg [31:0] rs1_value; // ask the register file to get this
-reg [31:0] rs2_value;
-
-reg [31:0] last_inst_addr;
-wire need_rs;
-wire need_lsb;
-wire need_rs1;
-wire need_rs2;
-wire rs1_need_ready;
+    reg [31:0] last_inst_addr;
+    wire need_rs;
+    wire need_lsb;
+    wire need_rs1;
+    wire need_rs2;
+    wire rs1_need_ready;
 
 
 assign need_rs = (opcode == opcode_b) || (opcode == opcode_r) || (opcode == opcode_i);
 assign need_lsb = (opcode == opcode_l) || (opcode == opcode_s);
 
-assign need_rs1 = opcode == opcode_jalr || opcode == opcode_r || opcode == opcode_i || opcode == opcode_s || opcode == opcode_b || opcode == opcode_l;
-assign need_rs2 = opcode == opcode_r || opcode == opcode_s || opcode == opcode_b;
-assign rs1_need_ready = opcode == opcode_jalr;
-reg is_dep1;
-reg is_dep2;
-reg [`reg_size:0] dep1;
-reg [`reg_size:0] dep2;
-
-wire need_begin = last_inst_addr != PC && !rob_full && (!rs_full || !need_rs) && (!lsb_full || !need_lsb) && !(rs1_need_ready && has_dep1)  && instcache_ready_out;
-assign need_inst = !(((last_inst_addr != PC) && instcache_ready_out) && ((need_rs && rs_full) || (need_lsb && lsb_full) || rob_full || (rs1_need_ready && has_dep1)));
-wire [31:0] next_rs2_val = opcode == opcode_i ? (is_riscv ? ((function3 == 3'b001 || function3 == 3'b101) ? shamt : {{20{immI[11]}}, immI}) : c_imm) : rs2_reg_value;
-wire predict= 1'b1;
-
-always @(posedge clk) begin
-    if(rst) begin
-        rs1_value <= 0;
-        rs2_value <= 0;
-        // can not be 0
-        last_inst_addr <= 32'habcdefff;
-
-        to_rob_ready <= 0;
-        rob_rd <= 0;
-        rob_type <= 0;
-        rob_imm <= 0;
-        rob_address <= 0;
-        rob_jump_address<= 0;
-        inst_ready <= 0;
-
-        to_lsb_ready <= 0;
-        lsb_type <= 0;
-        lsb_offset <= 0; 
-
-        to_rs_ready <= 0;
-        rs_type <= 0;
-
-        clear_inst <= 0;
-        if_addr <= 0;  
-
-    end
-    else if(!rdy)begin
-    end
-    else if (!(need_begin))begin
-        to_rob_ready <= 0;
-        to_lsb_ready <= 0;
-        to_rs_ready <= 0;
-        clear_inst <= 0;
-    end
-    else if(need_begin) begin
-        to_rob_ready <= 1;
-        to_lsb_ready <= need_lsb;
-        to_rs_ready <= need_rs;
-
-        last_inst_addr <= PC;
-
-        rob_type <= inst_in == 32'hff9ff06f ? `robtype_exit : (opcode == opcode_b ? `robtype_b : (opcode == opcode_s ? `robtype_s : `robtype_r));
-        lsb_type <= {function3,!(opcode == opcode_l)};
-        rs_type <= {function3,(opcode == opcode_r && inst_in[30]),(opcode == opcode_b)};
-
-        rs1_value <= rs1_reg_value;
-        rs2_value <= next_rs2_val;
-        is_dep1 <=(need_rs1 && has_dep1);
-        is_dep2 <=(need_rs2 && has_dep2);
-        dep1 <= input_dep1;
-        dep2 <= input_dep2;
-        rob_rd <= rd;   
-
-        lsb_offset <= is_riscv ? ((opcode == opcode_l) ? immI : immS) : c_imm;
-        rob_address <= PC;
-        rob_jump_address <= is_riscv ? PC + 4 : PC + 2 ;
-        inst_ready <= opcode == opcode_lui || opcode == opcode_auipc || opcode == opcode_j || opcode == opcode_jalr;
-    
-
-        case(opcode)
-            opcode_auipc:begin
-                rob_imm <= is_riscv ?  PC + {immU, 12'b0} : PC + c_imm;
-            end
-            opcode_jalr:begin
-                rob_imm <= is_riscv ? PC + 4 : PC + 2 ;
-                clear_inst <= 1;
-                if_addr <= is_riscv ? (rs1_reg_value + {{20{immI[11]}}, immI}) & ~32'b1 : (rs1_reg_value + c_imm) & ~32'b1;
-            end
-            opcode_b:begin
-                clear_inst <= 1;
-                if_addr <= PC +  is_riscv ? {{19{immB[11]}}, immB, 1'b0} : c_imm;
-            end
-            opcode_j:begin
-                rob_imm <= is_riscv ? PC + 4 : PC + 2 ;
-                clear_inst <= 1;
-                if_addr <= PC + is_riscv ? {{19{immJ[11]}}, immJ, 1'b0} : c_imm; 
-            end
-            opcode_lui:begin
-                rob_imm <= is_riscv ? {immU, 12'b0} : c_imm;
-            end
-            opcode_s:begin
-            end 
-            opcode_l:begin
-            end
-            opcode_i:begin
-            end 
-        endcase
-    end
-
-end
-/* assign need_inst = !need_begin; */
-assign rs1_reg_id = need_rs1 ? rs1:0;
-assign rs2_reg_id = need_rs2 ? rs2:0;
-
-assign rs_r1 = rs1_value;
-assign rs_r2 = rs2_value;
-assign rs_rd = rd;
-assign rs_dep1 = dep1;  
-assign rs_dep2 = dep2;
-assign rs_has_dep1 = is_dep1;
-assign rs_has_dep2 = is_dep2;
-assign rs_rob_id = next_position;
-
-
-assign lsb_r1 = rs1_value;
-assign lsb_r2 = rs2_value;
-assign lsb_dep1 = dep1;
-assign lsb_dep2 = dep2;
-assign lsb_has_dep1 = is_dep1;
-assign lsb_has_dep2 = is_dep2;
-assign lsb_rob_id = next_position;
-assign lsb_rd = rd;
-
-
-function [4:0] get_rs1;
-        input [31:0] inst;
+    function [4:0] get_rs1;
+        input [15:0] inst;
         case (inst[1:0])
             2'b00: get_rs1 = (inst[15:13] == 3'b000) ? 2 : 8 + inst[9:7];
             2'b01: begin
@@ -309,7 +155,7 @@ function [4:0] get_rs1;
     endfunction
 
     function [4:0] get_rs2;
-        input [31:0] inst;
+        input [15:0] inst;
         case(inst[1:0])
             2'b00 : get_rs2 = (inst[15:13] == 3'b110) ? 8 + inst[4:2]: 0;  
             2'b01 : get_rs2 = (inst[15:13] == 3'b100 && inst[11:10] == 2'b11) ? 8 + inst[4:2] : 0;
@@ -318,7 +164,7 @@ function [4:0] get_rs1;
     endfunction
 
     function [6:0] get_opcode;
-        input [31:0] inst;
+        input [15:0] inst;
         case (inst[1:0])
             2'b00: case (inst[15:13])
                 3'b000: get_opcode = opcode_i;
@@ -349,7 +195,7 @@ function [4:0] get_rs1;
     endfunction
 
     function [4:0] get_rd;
-        input [31:0] inst;
+        input [15:0] inst;
         case (inst[1:0])
             2'b00: get_rd = (inst[15:13] == 3'b110) ? 0 : 8 + inst[4:2];
             2'b01: begin
@@ -380,7 +226,7 @@ function [4:0] get_rs1;
 
 
     function [2:0]get_function3;
-        input [31:0] inst;
+        input [15:0] inst;
         case (inst[1:0])
             2'b00: case (inst[15:13])
             //add sub judge specially
@@ -425,7 +271,7 @@ function [4:0] get_rs1;
     endfunction
     
     function [31:0]get_imm;
-        input [31:0] inst;
+        input [15:0] inst;
         case (inst[1:0])
             2'b00: case (inst[15:13])
                 3'b000: get_imm = {22'b0,inst[10:7],inst[12:11],inst[5],inst[6],2'b0};
@@ -474,5 +320,9 @@ function [4:0] get_rs1;
             end
         endcase
     endfunction    
+
+   
+
+
 
 endmodule
