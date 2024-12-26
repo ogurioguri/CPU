@@ -1,5 +1,5 @@
-`define robsize 3
-`define rs_size_bit 3
+`define robsize 2
+`define rs_size_bit 2
 
 `define rob_type_bit 2
 `define robtype_r 2'b00
