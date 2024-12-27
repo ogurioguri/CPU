@@ -48,6 +48,8 @@ module reorder_buffer(
     output wire rob_value2_ready,
     output wire [31:0] rob_value2
 
+
+
 );
 
     localparam rob_size_number = 1 << `robsize;
@@ -65,8 +67,8 @@ module reorder_buffer(
 
 
     integer i;
-    always @(posedge clk or posedge rst) begin
-        if(rst || (clear && rdy)) begin
+    always @(posedge clk) begin
+        if(rst || (clear && rdy) ) begin
             clear <= 0;
             next_pc <= 0;
             for(i = 0; i < rob_size_number; i = i + 1) begin
@@ -82,11 +84,11 @@ module reorder_buffer(
             rob_id_tail <= 0;
         end
         else if(rdy) begin
-            if(rs_ready) begin
+            if(rs_ready && busy[rs_rob_id] ) begin
                 rob_value[rs_rob_id] <= rs_value;
                 ready_issue[rs_rob_id] <= 1;
             end
-            if(lsb_ready) begin
+            if(lsb_ready && busy[lsb_rob_id]) begin
                 rob_value[lsb_rob_id] <= lsb_value;
                 ready_issue[lsb_rob_id] <= 1;
             end 
@@ -100,20 +102,31 @@ module reorder_buffer(
                 rob_pc[rob_id_tail] <= inst_pc;
                 rob_jump_addr[rob_id_tail] <= inst_jump_addr;
             end
-            if(busy[rob_id_head] && ready_issue[rob_id_head]) begin
+            if(can_shot) begin
                 rob_id_head <= (rob_id_head + 1) % rob_size_number;
+        
                 busy[rob_id_head] <= 0;
                 ready_issue[rob_id_head] <= 0;
                 if(!rob_value[rob_id_head][0] && rob_type[rob_id_head] == `robtype_b) begin
                     clear <= 1;
                     next_pc <= rob_jump_addr[rob_id_head];
                 end
-                /* rob_id_head <= (rob_id_head + 1) % rob_size_number; */
             end
             
         end
     end
+
+
+    //debug
+    wire busy_ = busy[rob_id_head];
+    wire ready_issue_ = ready_issue[rob_id_head];
+    wire position_ready = ready_issue[3'b100];
+    wire rob_rd_ = rob_rd[rob_id_head];
     wire can_shot = busy[rob_id_head] && ready_issue[rob_id_head];
+
+
+
+
 
     assign outrob_id_head = rob_id_head;
     assign outrob_id_tail = rob_id_tail;
@@ -138,6 +151,9 @@ module reorder_buffer(
     assign rob_value1 = ready_issue[need_rob_id1] ? rob_value[need_rob_id1] : (rs_ready && rs_rob_id == need_rob_id1) ? rs_value : (lsb_ready && lsb_rob_id == need_rob_id1) ? lsb_value : inst_imm;
     assign rob_value2_ready = ready_issue[need_rob_id2] || (rs_ready && rs_rob_id == need_rob_id2) || (lsb_ready && lsb_rob_id == need_rob_id2) || (decoder_ready && inst_ready && rob_id_tail == need_rob_id2);
     assign rob_value2 = ready_issue[need_rob_id2] ? rob_value[need_rob_id2] : (rs_ready && rs_rob_id == need_rob_id2) ? rs_value : (lsb_ready && lsb_rob_id == need_rob_id2) ? lsb_value :inst_imm;
+
+    assign output_rob_id1 = need_rob_id1;
+    assign output_rob_id2 = need_rob_id2;
 
 
 

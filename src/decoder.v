@@ -203,7 +203,7 @@ always @(posedge clk) begin
         to_rs_ready <= 0;
         clear_inst <= 0;
     end
-    else if(need_begin) begin
+    else  begin
         to_rob_ready <= 1;
         to_lsb_ready <= need_lsb;
         to_rs_ready <= need_rs;
@@ -259,6 +259,9 @@ always @(posedge clk) begin
     end
 
 end
+/* always @(*) begin
+    $display("pc = 0x%h", PC);
+end */
 /* assign need_inst = !need_begin; */
 assign rs1_reg_id = need_rs1 ? rs1:0;
 assign rs2_reg_id = need_rs2 ? rs2:0;
