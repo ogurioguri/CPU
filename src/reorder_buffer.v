@@ -152,8 +152,7 @@ module reorder_buffer(
     assign rob_value2_ready = ready_issue[need_rob_id2] || (rs_ready && rs_rob_id == need_rob_id2) || (lsb_ready && lsb_rob_id == need_rob_id2) || (decoder_ready && inst_ready && rob_id_tail == need_rob_id2);
     assign rob_value2 = ready_issue[need_rob_id2] ? rob_value[need_rob_id2] : (rs_ready && rs_rob_id == need_rob_id2) ? rs_value : (lsb_ready && lsb_rob_id == need_rob_id2) ? lsb_value :inst_imm;
 
-    assign output_rob_id1 = need_rob_id1;
-    assign output_rob_id2 = need_rob_id2;
+    
 
 
 

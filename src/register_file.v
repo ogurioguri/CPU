@@ -94,7 +94,7 @@ module register_file(
         end
     end
 
-    wire [31:0] zero = regs[0];
+    /* wire [31:0] zero = regs[0];
     wire [31:0] ra = regs[1];
     wire [31:0] sp = regs[2];
     wire [31:0] gp = regs[3];
@@ -189,6 +189,6 @@ module register_file(
     wire [`robsize -1 :0]t3_dep_rob_id = depend[28];
     wire[`robsize -1 :0] t4_dep_rob_id = depend[29];
     wire[`robsize -1 :0] t5_dep_rob_id = depend[30];
-    wire[`robsize -1 :0] t6_dep_rob_id = depend[31];
+    wire[`robsize -1 :0] t6_dep_rob_id = depend[31]; */
 
 endmodule
